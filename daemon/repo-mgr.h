@@ -48,10 +48,8 @@ struct _SeafRepo {
     gchar       magic[65];       /* hash(repo_id + passwd), key stretched. */
     gchar       random_key[97];  /* key length is 48 after encryption */
     gboolean    no_local_history;
-    gint64 last_modify;
 
     SeafBranch *head;
-    gchar root_id[41];
 
     gboolean    is_corrupted;
     gboolean    delete_pending;
@@ -89,9 +87,6 @@ struct _SeafRepo {
 
     /* Used for http sync. */
     char *server_url;
-    /* Can be server_url or server_url:8082, depends on which one works. */
-    char *effective_host;
-    gboolean use_fileserver_port;
 };
 
 

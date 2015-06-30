@@ -590,8 +590,7 @@ static int update_file_flags(struct merge_options *o,
                                           o->remote_head,
                                           path,
                                           FALSE,
-                                          &conflicted,
-                                          NULL) < 0) {
+                                          &conflicted) < 0) {
             g_warning("Failed to checkout file %s.\n", file_id);
             refresh = 0;
             goto update_cache;

@@ -291,10 +291,7 @@ win32_long_path (const char *path)
     char *long_path, *p;
     wchar_t *long_path_w;
 
-    if (strncmp(path, "//", 2) == 0)
-        long_path = g_strconcat ("\\\\?\\UNC\\", path + 2, NULL);
-    else
-        long_path = g_strconcat ("\\\\?\\", path, NULL);
+    long_path = g_strconcat ("\\\\?\\", path, NULL);
     for (p = long_path; *p != 0; ++p)
         if (*p == '/')
             *p = '\\';
@@ -690,8 +687,6 @@ traverse_directory_win32 (wchar_t *path_w,
         if (wcscmp (fdata.cFileName, L".") == 0 ||
             wcscmp (fdata.cFileName, L"..") == 0)
             continue;
-
-        ++ret;
 
         stop = FALSE;
         if (callback (path_w, &fdata, user_data, &stop) < 0) {

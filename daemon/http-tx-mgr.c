@@ -29,22 +29,6 @@
 
 #define RESET_BYTES_INTERVAL_MSEC 1000
 
-#ifndef SEAFILE_CLIENT_VERSION
-#define SEAFILE_CLIENT_VERSION PACKAGE_VERSION
-#endif
-
-#ifdef WIN32
-#define USER_AGENT_OS "Windows NT"
-#endif
-
-#ifdef __APPLE__
-#define USER_AGENT_OS "Apple OS X"
-#endif
-
-#ifdef __linux__
-#define USER_AGENT_OS "Linux"
-#endif
-
 struct _Connection {
     CURL *curl;
     gint64 ctime;               /* Used to clean up unused connection. */
@@ -108,7 +92,6 @@ http_tx_task_free (HttpTxTask *task)
     g_free (task->token);
     g_free (task->passwd);
     g_free (task->worktree);
-    g_free (task->email);
     g_free (task);
 }
 
@@ -343,25 +326,14 @@ recv_response (void *contents, size_t size, size_t nmemb, void *userp)
 
 typedef size_t (*HttpRecvCallback) (void *, size_t, size_t, void *);
 
-/*
- * The @timeout parameter is for detecting network connection problems. 
- * The @timeout parameter should be set to TRUE for data-transfer-only operations,
- * such as getting objects, blocks. For operations that requires calculations
- * on the server side, the timeout should be set to FALSE. Otherwise when
- * the server sometimes takes more than 45 seconds to calculate the result,
- * the client will time out.
- */
 static int
 http_get (CURL *curl, const char *url, const char *token,
           int *rsp_status, char **rsp_content, gint64 *rsp_size,
-          HttpRecvCallback callback, void *cb_data,
-          gboolean timeout)
+          HttpRecvCallback callback, void *cb_data)
 {
     char *token_header;
     struct curl_slist *headers = NULL;
     int ret = 0;
-
-    headers = curl_slist_append (headers, "User-Agent: Seafile/"SEAFILE_CLIENT_VERSION" ("USER_AGENT_OS")");
 
     if (token) {
         token_header = g_strdup_printf ("Seafile-Repo-Token: %s", token);
@@ -373,11 +345,9 @@ http_get (CURL *curl, const char *url, const char *token,
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
-    if (timeout) {
-        /* Set low speed limit to 1 bytes. This effectively means no data. */
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
-    }
+    /* Set low speed limit to 1 bytes. This effectively means no data. */
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
 
     if (seaf->disable_verify_certificate) {
         curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -458,14 +428,11 @@ static int
 http_put (CURL *curl, const char *url, const char *token,
           const char *req_content, gint64 req_size,
           HttpSendCallback callback, void *cb_data,
-          int *rsp_status, char **rsp_content, gint64 *rsp_size,
-          gboolean timeout)
+          int *rsp_status, char **rsp_content, gint64 *rsp_size)
 {
     char *token_header;
     struct curl_slist *headers = NULL;
     int ret = 0;
-
-    headers = curl_slist_append (headers, "User-Agent: Seafile/"SEAFILE_CLIENT_VERSION" ("USER_AGENT_OS")");
 
     if (token) {
         token_header = g_strdup_printf ("Seafile-Repo-Token: %s", token);
@@ -477,11 +444,9 @@ http_put (CURL *curl, const char *url, const char *token,
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
 
-    if (timeout) {
-        /* Set low speed limit to 1 bytes. This effectively means no data. */
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
-    }
+    /* Set low speed limit to 1 bytes. This effectively means no data. */
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
 
     if (seaf->disable_verify_certificate) {
         curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -551,16 +516,13 @@ out:
 static int
 http_post (CURL *curl, const char *url, const char *token,
            const char *req_content, gint64 req_size,
-           int *rsp_status, char **rsp_content, gint64 *rsp_size,
-           gboolean timeout)
+           int *rsp_status, char **rsp_content, gint64 *rsp_size)
 {
     char *token_header;
     struct curl_slist *headers = NULL;
     int ret = 0;
 
     g_return_val_if_fail (req_content != NULL, -1);
-
-    headers = curl_slist_append (headers, "User-Agent: Seafile/"SEAFILE_CLIENT_VERSION" ("USER_AGENT_OS")");
 
     if (token) {
         token_header = g_strdup_printf ("Seafile-Repo-Token: %s", token);
@@ -572,11 +534,9 @@ http_post (CURL *curl, const char *url, const char *token,
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
-    if (timeout) {
-        /* Set low speed limit to 1 bytes. This effectively means no data. */
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
-    }
+    /* Set low speed limit to 1 bytes. This effectively means no data. */
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, HTTP_TIMEOUT_SEC);
 
     if (seaf->disable_verify_certificate) {
         curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -692,7 +652,6 @@ transition_state (HttpTxTask *task, int state, int rt_state)
 
 typedef struct {
     char *host;
-    gboolean use_fileserver_port;
     HttpProtocolVersionCallback callback;
     void *user_data;
 
@@ -754,12 +713,9 @@ check_protocol_version_thread (void *vdata)
 
     curl = conn->curl;
 
-    if (!data->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/protocol-version", data->host);
-    else
-        url = g_strdup_printf ("%s/protocol-version", data->host);
+    url = g_strdup_printf ("%s/seafhttp/protocol-version", data->host);
 
-    if (http_get (curl, url, NULL, &status, &rsp_content, &rsp_size, NULL, NULL, FALSE) < 0) {
+    if (http_get (curl, url, NULL, &status, &rsp_content, &rsp_size, NULL, NULL) < 0) {
         goto out;
     }
 
@@ -803,14 +759,12 @@ check_protocol_version_done (void *vdata)
 int
 http_tx_manager_check_protocol_version (HttpTxManager *manager,
                                         const char *host,
-                                        gboolean use_fileserver_port,
                                         HttpProtocolVersionCallback callback,
                                         void *user_data)
 {
     CheckProtocolData *data = g_new0 (CheckProtocolData, 1);
 
     data->host = g_strdup(host);
-    data->use_fileserver_port = use_fileserver_port;
     data->callback = callback;
     data->user_data = user_data;
 
@@ -829,7 +783,6 @@ typedef struct {
     int repo_version;
     char *host;
     char *token;
-    gboolean use_fileserver_port;
     HttpHeadCommitCallback callback;
     void *user_data;
 
@@ -899,15 +852,11 @@ check_head_commit_thread (void *vdata)
 
     curl = conn->curl;
 
-    if (!data->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/HEAD",
-                               data->host, data->repo_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/commit/HEAD",
-                               data->host, data->repo_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/HEAD",
+                           data->host, data->repo_id);
 
     if (http_get (curl, url, data->token, &status, &rsp_content, &rsp_size,
-                  NULL, NULL, FALSE) < 0)
+                  NULL, NULL) < 0)
         goto out;
 
     if (status == HTTP_OK) {
@@ -953,7 +902,6 @@ http_tx_manager_check_head_commit (HttpTxManager *manager,
                                    int repo_version,
                                    const char *host,
                                    const char *token,
-                                   gboolean use_fileserver_port,
                                    HttpHeadCommitCallback callback,
                                    void *user_data)
 {
@@ -965,7 +913,6 @@ http_tx_manager_check_head_commit (HttpTxManager *manager,
     data->token = g_strdup(token);
     data->callback = callback;
     data->user_data = user_data;
-    data->use_fileserver_port = use_fileserver_port;
 
     ccnet_job_manager_schedule_job (seaf->job_mgr,
                                     check_head_commit_thread,
@@ -1002,7 +949,6 @@ http_folder_perm_res_free (HttpFolderPermRes *res)
 
 typedef struct {
     char *host;
-    gboolean use_fileserver_port;
     GList *requests;
     HttpGetFolderPermsCallback callback;
     void *user_data;
@@ -1243,17 +1189,14 @@ get_folder_perms_thread (void *vdata)
 
     curl = conn->curl;
 
-    if (!data->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/folder-perm", data->host);
-    else
-        url = g_strdup_printf ("%s/repo/folder-perm", data->host);
+    url = g_strdup_printf ("%s/seafhttp/repo/folder-perm", data->host);
 
     req_content = compose_get_folder_perms_request (data->requests);
     if (!req_content)
         goto out;
 
     if (http_post (curl, url, NULL, req_content, strlen(req_content),
-                   &status, &rsp_content, &rsp_size, FALSE) < 0)
+                   &status, &rsp_content, &rsp_size) < 0)
         goto out;
 
     if (status == HTTP_OK) {
@@ -1300,7 +1243,6 @@ get_folder_perms_done (void *vdata)
 int
 http_tx_manager_get_folder_perms (HttpTxManager *manager,
                                   const char *host,
-                                  gboolean use_fileserver_port,
                                   GList *folder_perm_requests,
                                   HttpGetFolderPermsCallback callback,
                                   void *user_data)
@@ -1311,7 +1253,6 @@ http_tx_manager_get_folder_perms (HttpTxManager *manager,
     data->requests = folder_perm_requests;
     data->callback = callback;
     data->user_data = user_data;
-    data->use_fileserver_port = use_fileserver_port;
 
     ccnet_job_manager_schedule_job (seaf->job_mgr,
                                     get_folder_perms_thread,
@@ -1354,21 +1295,20 @@ check_permission (HttpTxTask *task, Connection *conn)
     curl = conn->curl;
 
     const char *type = (task->type == HTTP_TASK_TYPE_DOWNLOAD) ? "download" : "upload";
-    const char *url_prefix = (task->use_fileserver_port) ? "" : "seafhttp/";
     if (seaf->session->base.name) {
         char *client_name = g_uri_escape_string (seaf->session->base.name,
                                                  NULL, FALSE);
-        url = g_strdup_printf ("%s/%srepo/%s/permission-check/?op=%s"
+        url = g_strdup_printf ("%s/seafhttp/repo/%s/permission-check/?op=%s"
                                "&client_id=%s&client_name=%s",
-                               task->host, url_prefix, task->repo_id, type,
+                               task->host, task->repo_id, type,
                                seaf->session->base.id, client_name);
         g_free (client_name);
     } else {
-        url = g_strdup_printf ("%s/%srepo/%s/permission-check/?op=%s",
-                               task->host, url_prefix, task->repo_id, type);
+        url = g_strdup_printf ("%s/seafhttp/repo/%s/permission-check/?op=%s",
+                               task->host, task->repo_id, type);
     }
 
-    if (http_get (curl, url, task->token, &status, NULL, NULL, NULL, NULL, FALSE) < 0) {
+    if (http_get (curl, url, task->token, &status, NULL, NULL, NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -1399,7 +1339,6 @@ http_tx_manager_add_upload (HttpTxManager *manager,
                             const char *host,
                             const char *token,
                             int protocol_version,
-                            gboolean use_fileserver_port,
                             GError **error)
 {
     HttpTxTask *task;
@@ -1426,8 +1365,6 @@ http_tx_manager_add_upload (HttpTxManager *manager,
 
     task->state = TASK_STATE_NORMAL;
 
-    task->use_fileserver_port = use_fileserver_port;
-
     g_hash_table_insert (manager->priv->upload_tasks,
                          g_strdup(repo_id),
                          task);
@@ -1443,33 +1380,22 @@ http_tx_manager_add_upload (HttpTxManager *manager,
 typedef struct {
     HttpTxTask *task;
     gint64 delta;
-    GHashTable *active_paths;
 } CalcQuotaDeltaData;
 
 static int
-check_quota_and_active_paths_diff_files (int n, const char *basedir,
-                                         SeafDirent *files[], void *vdata)
+check_quota_diff_files (int n, const char *basedir, SeafDirent *files[], void *vdata)
 {
     CalcQuotaDeltaData *data = vdata;
     SeafDirent *file1 = files[0];
     SeafDirent *file2 = files[1];
     gint64 size1, size2;
-    char *path;
 
     if (file1 && file2) {
         size1 = file1->size;
         size2 = file2->size;
         data->delta += (size1 - size2);
-
-        if (strcmp(file1->id, file2->id) != 0) {
-            path = g_strconcat(basedir, file1->name, NULL);
-            g_hash_table_replace (data->active_paths, path, (void*)(long)S_IFREG);
-        }
     } else if (file1 && !file2) {
         data->delta += file1->size;
-
-        path = g_strconcat (basedir, file1->name, NULL);
-        g_hash_table_replace (data->active_paths, path, (void*)(long)S_IFREG);
     } else if (!file1 && file2) {
         data->delta -= file2->size;
     }
@@ -1478,28 +1404,15 @@ check_quota_and_active_paths_diff_files (int n, const char *basedir,
 }
 
 static int
-check_quota_and_active_paths_diff_dirs (int n, const char *basedir,
-                                        SeafDirent *dirs[], void *vdata,
-                                        gboolean *recurse)
+check_quota_diff_dirs (int n, const char *basedir, SeafDirent *dirs[], void *data,
+                       gboolean *recurse)
 {
-    CalcQuotaDeltaData *data = vdata;
-    SeafDirent *dir1 = dirs[0];
-    SeafDirent *dir2 = dirs[1];
-    char *path;
-
-    /* When a new empty dir is created. */
-    if (!dir2 && dir1 && strcmp(dir1->id, EMPTY_SHA1) == 0) {
-        path = g_strconcat (basedir, dir1->name, NULL);
-        g_hash_table_replace (data->active_paths, path, (void*)(long)S_IFDIR);
-    }
-
+    /* Do nothing */
     return 0;
 }
 
 static int
-calculate_upload_size_delta_and_active_paths (HttpTxTask *task,
-                                              gint64 *delta,
-                                              GHashTable *active_paths)
+calculate_upload_size_delta (HttpTxTask *task, gint64 *delta)
 {
     int ret = 0;
     SeafBranch *local = NULL, *master = NULL;
@@ -1540,14 +1453,13 @@ calculate_upload_size_delta_and_active_paths (HttpTxTask *task,
     CalcQuotaDeltaData data;
     memset (&data, 0, sizeof(data));
     data.task = task;
-    data.active_paths = active_paths;
 
     DiffOptions opts;
     memset (&opts, 0, sizeof(opts));
     memcpy (opts.store_id, task->repo_id, 36);
     opts.version = task->repo_version;
-    opts.file_cb = check_quota_and_active_paths_diff_files;
-    opts.dir_cb = check_quota_and_active_paths_diff_dirs;
+    opts.file_cb = check_quota_diff_files;
+    opts.dir_cb = check_quota_diff_dirs;
     opts.data = &data;
 
     const char *trees[2];
@@ -1557,7 +1469,6 @@ calculate_upload_size_delta_and_active_paths (HttpTxTask *task,
         seaf_warning ("Failed to diff local and master head for repo %.8s.\n",
                       task->repo_id);
         ret = -1;
-        g_hash_table_destroy (data.active_paths);
         goto out;
     }
 
@@ -1573,23 +1484,27 @@ out:
 }
 
 static int
-check_quota (HttpTxTask *task, Connection *conn, gint64 delta)
+check_quota (HttpTxTask *task, Connection *conn)
 {
     CURL *curl;
     char *url;
     int status;
+    gint64 delta = 0;
     int ret = 0;
+
+    if (calculate_upload_size_delta (task, &delta) < 0) {
+        seaf_warning ("Failed to calculate upload size delta for repo %s.\n",
+                      task->repo_id);
+        task->error = HTTP_TASK_ERR_BAD_LOCAL_DATA;
+        return -1;
+    }
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/quota-check/?delta=%"G_GINT64_FORMAT"",
-                               task->host, task->repo_id, delta);
-    else
-        url = g_strdup_printf ("%s/repo/%s/quota-check/?delta=%"G_GINT64_FORMAT"",
-                               task->host, task->repo_id, delta);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/quota-check/?delta=%"G_GINT64_FORMAT"",
+                           task->host, task->repo_id, delta);
 
-    if (http_get (curl, url, task->token, &status, NULL, NULL, NULL, NULL, FALSE) < 0) {
+    if (http_get (curl, url, task->token, &status, NULL, NULL, NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -1628,17 +1543,13 @@ send_commit_object (HttpTxTask *task, Connection *conn)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/%s",
-                               task->host, task->repo_id, task->head);
-    else
-        url = g_strdup_printf ("%s/repo/%s/commit/%s",
-                               task->host, task->repo_id, task->head);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/%s",
+                           task->host, task->repo_id, task->head);
 
     if (http_put (curl, url, task->token,
                   data, len,
                   NULL, NULL,
-                  &status, NULL, NULL, TRUE) < 0) {
+                  &status, NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -1837,7 +1748,7 @@ upload_check_id_list_segment (HttpTxTask *task, Connection *conn, const char *ur
 
     if (http_post (curl, url, task->token,
                    data, len,
-                   &status, &rsp_content, &rsp_size, FALSE) < 0) {
+                   &status, &rsp_content, &rsp_size) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -1952,16 +1863,12 @@ send_fs_objects (HttpTxTask *task, Connection *conn, GList **send_fs_list)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/recv-fs/",
-                               task->host, task->repo_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/recv-fs/",
-                               task->host, task->repo_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/recv-fs/",
+                           task->host, task->repo_id);
 
     if (http_post (curl, url, task->token,
                    package, evbuffer_get_length(buf),
-                   &status, NULL, NULL, FALSE) < 0) {
+                   &status, NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -2230,17 +2137,13 @@ send_block (HttpTxTask *task, Connection *conn, const char *block_id)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/block/%s",
-                               task->host, task->repo_id, block_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/block/%s",
-                               task->host, task->repo_id, block_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/block/%s",
+                           task->host, task->repo_id, block_id);
 
     if (http_put (curl, url, task->token,
                   NULL, bmd->size,
                   send_block_callback, &data,
-                  &status, NULL, NULL, TRUE) < 0) {
+                  &status, NULL, NULL) < 0) {
         if (task->state == HTTP_TASK_STATE_CANCELED)
             goto out;
 
@@ -2276,17 +2179,13 @@ update_branch (HttpTxTask *task, Connection *conn)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/HEAD/?head=%s",
-                               task->host, task->repo_id, task->head);
-    else
-        url = g_strdup_printf ("%s/repo/%s/commit/HEAD/?head=%s",
-                               task->host, task->repo_id, task->head);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/HEAD/?head=%s",
+                           task->host, task->repo_id, task->head);
 
     if (http_put (curl, url, task->token,
                   NULL, 0,
                   NULL, NULL,
-                  &status, NULL, NULL, FALSE) < 0) {
+                  &status, NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -2323,32 +2222,6 @@ update_master_branch (HttpTxTask *task)
     }
 }
 
-static void
-set_path_status_syncing (gpointer key, gpointer value, gpointer user_data)
-{
-    HttpTxTask *task = user_data;
-    char *path = key;
-    int mode = (int)(long)value;
-    seaf_sync_manager_update_active_path (seaf->sync_mgr,
-                                          task->repo_id,
-                                          path,
-                                          mode,
-                                          SYNC_STATUS_SYNCING);
-}
-
-static void
-set_path_status_synced (gpointer key, gpointer value, gpointer user_data)
-{
-    HttpTxTask *task = user_data;
-    char *path = key;
-    int mode = (int)(long)value;
-    seaf_sync_manager_update_active_path (seaf->sync_mgr,
-                                          task->repo_id,
-                                          path,
-                                          mode,
-                                          SYNC_STATUS_SYNCED);
-}
-
 static void *
 http_upload_thread (void *vdata)
 {
@@ -2360,7 +2233,6 @@ http_upload_thread (void *vdata)
     GList *send_fs_list = NULL, *needed_fs_list = NULL;
     GList *block_list = NULL, *needed_block_list = NULL;
     GList *ptr;
-    GHashTable *active_paths = NULL;
 
     SeafBranch *local = seaf_branch_manager_get_branch (seaf->branch_mgr,
                                                         task->repo_id, "local");
@@ -2391,25 +2263,13 @@ http_upload_thread (void *vdata)
 
     transition_state (task, task->state, HTTP_TASK_RT_STATE_CHECK);
 
-    gint64 delta = 0;
-    active_paths = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-
-    if (calculate_upload_size_delta_and_active_paths (task, &delta, active_paths) < 0) {
-        seaf_warning ("Failed to calculate upload size delta for repo %s.\n",
-                      task->repo_id);
-        task->error = HTTP_TASK_ERR_BAD_LOCAL_DATA;
-        goto out;
-    }
-
-    g_hash_table_foreach (active_paths, set_path_status_syncing, task);
-
     if (check_permission (task, conn) < 0) {
         seaf_warning ("Upload permission denied for repo %.8s on server %s.\n",
                       task->repo_id, task->host);
         goto out;
     }
 
-    if (check_quota (task, conn, delta) < 0) {
+    if (check_quota (task, conn) < 0) {
         seaf_warning ("Not enough quota for repo %.8s on server %s.\n",
                       task->repo_id, task->host);
         goto out;
@@ -2438,12 +2298,8 @@ http_upload_thread (void *vdata)
         goto out;
     }
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/check-fs/",
-                               task->host, task->repo_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/check-fs/",
-                               task->host, task->repo_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/check-fs/",
+                           task->host, task->repo_id);
 
     while (send_fs_list != NULL) {
         if (upload_check_id_list_segment (task, conn, url,
@@ -2477,12 +2333,8 @@ http_upload_thread (void *vdata)
         goto out;
     }
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/check-blocks/",
-                               task->host, task->repo_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/check-blocks/",
-                               task->host, task->repo_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/check-blocks/",
+                           task->host, task->repo_id);
 
     while (block_list != NULL) {
         if (upload_check_id_list_segment (task, conn, url,
@@ -2531,17 +2383,11 @@ http_upload_thread (void *vdata)
      */
     update_master_branch (task);
 
-    if (active_paths != NULL)
-        g_hash_table_foreach (active_paths, set_path_status_synced, task);
-
 out:
     string_list_free (send_fs_list);
     string_list_free (needed_fs_list);
     string_list_free (block_list);
     string_list_free (needed_block_list);
-
-    if (active_paths)
-        g_hash_table_destroy (active_paths);
 
     g_free (url);
 
@@ -2579,14 +2425,12 @@ http_tx_manager_add_download (HttpTxManager *manager,
                               const char *passwd,
                               const char *worktree,
                               int protocol_version,
-                              const char *email,
-                              gboolean use_fileserver_port,
                               GError **error)
 {
     HttpTxTask *task;
     SeafRepo *repo;
 
-    if (!repo_id || !token || !host || !server_head_id || !email) {
+    if (!repo_id || !token || !host || !server_head_id) {
         g_set_error (error, SEAFILE_DOMAIN, SEAF_ERR_BAD_ARGS, "Empty argument(s)");
         return -1;
     }
@@ -2607,11 +2451,8 @@ http_tx_manager_add_download (HttpTxManager *manager,
 
     memcpy (task->head, server_head_id, 40);
     task->protocol_version = protocol_version;
-    task->email = g_strdup(email);
 
     task->state = TASK_STATE_NORMAL;
-
-    task->use_fileserver_port = use_fileserver_port;
 
     g_hash_table_insert (manager->priv->download_tasks,
                          g_strdup(repo_id),
@@ -2637,16 +2478,12 @@ get_commit_object (HttpTxTask *task, Connection *conn)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/%s",
-                               task->host, task->repo_id, task->head);
-    else
-        url = g_strdup_printf ("%s/repo/%s/commit/%s",
-                               task->host, task->repo_id, task->head);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/commit/%s",
+                           task->host, task->repo_id, task->head);
 
     if (http_get (curl, url, task->token, &status,
                   &rsp_content, &rsp_size,
-                  NULL, NULL, TRUE) < 0) {
+                  NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -2694,8 +2531,6 @@ get_needed_fs_id_list (HttpTxTask *task, Connection *conn, GList **fs_id_list)
     json_error_t jerror;
     const char *obj_id;
 
-    const char *url_prefix = (task->use_fileserver_port) ? "" : "seafhttp/";
-
     if (!task->is_clone) {
         master = seaf_branch_manager_get_branch (seaf->branch_mgr,
                                                  task->repo_id,
@@ -2706,22 +2541,22 @@ get_needed_fs_id_list (HttpTxTask *task, Connection *conn, GList **fs_id_list)
             return -1;
         }
 
-        url = g_strdup_printf ("%s/%srepo/%s/fs-id-list/"
+        url = g_strdup_printf ("%s/seafhttp/repo/%s/fs-id-list/"
                                "?server-head=%s&client-head=%s",
-                               task->host, url_prefix, task->repo_id,
+                               task->host, task->repo_id,
                                task->head, master->commit_id);
 
         seaf_branch_unref (master);
     } else {
-        url = g_strdup_printf ("%s/%srepo/%s/fs-id-list/?server-head=%s",
-                               task->host, url_prefix, task->repo_id, task->head);
+        url = g_strdup_printf ("%s/seafhttp/repo/%s/fs-id-list/?server-head=%s",
+                               task->host, task->repo_id, task->head);
     }
 
     curl = conn->curl;
 
     if (http_get (curl, url, task->token, &status,
                   &rsp_content, &rsp_size,
-                  NULL, NULL, FALSE) < 0) {
+                  NULL, NULL) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -2843,14 +2678,11 @@ get_fs_objects (HttpTxTask *task, Connection *conn, GList **fs_list)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/pack-fs/", task->host, task->repo_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/pack-fs/", task->host, task->repo_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/pack-fs/", task->host, task->repo_id);
 
     if (http_post (curl, url, task->token,
                    data, len,
-                   &status, &rsp_content, &rsp_size, FALSE) < 0) {
+                   &status, &rsp_content, &rsp_size) < 0) {
         task->error = HTTP_TASK_ERR_NET;
         ret = -1;
         goto out;
@@ -3003,15 +2835,11 @@ get_block (HttpTxTask *task, Connection *conn, const char *block_id)
 
     curl = conn->curl;
 
-    if (!task->use_fileserver_port)
-        url = g_strdup_printf ("%s/seafhttp/repo/%s/block/%s",
-                               task->host, task->repo_id, block_id);
-    else
-        url = g_strdup_printf ("%s/repo/%s/block/%s",
-                               task->host, task->repo_id, block_id);
+    url = g_strdup_printf ("%s/seafhttp/repo/%s/block/%s",
+                           task->host, task->repo_id, block_id);
 
     if (http_get (curl, url, task->token, &status, NULL, NULL,
-                  get_block_callback, &data, TRUE) < 0) {
+                  get_block_callback, &data) < 0) {
         if (task->state == HTTP_TASK_STATE_CANCELED)
             goto error;
 

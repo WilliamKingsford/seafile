@@ -3424,8 +3424,6 @@ out:
     if (ret == 0) {
         if (revert_to_root)
             ret |= REVERT_TO_ROOT;
-
-        update_repo_size (repo_id);
     }
 
     return ret;
@@ -3629,8 +3627,6 @@ out:
     if (ret == 0) {
         if (revert_to_root)
             ret |= REVERT_TO_ROOT;
-
-        update_repo_size (repo_id);
     }
 
     return ret;

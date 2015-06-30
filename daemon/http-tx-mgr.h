@@ -68,8 +68,6 @@ struct _HttpTxTask {
     int type;
     char *host;
     gboolean is_clone;
-    char *email;
-    gboolean use_fileserver_port;
 
     char head[41];
 
@@ -109,8 +107,6 @@ http_tx_manager_add_download (HttpTxManager *manager,
                               const char *passwd,
                               const char *worktree,
                               int protocol_version,
-                              const char *email,
-                              gboolean use_fileserver_port,
                               GError **error);
 
 int
@@ -120,7 +116,6 @@ http_tx_manager_add_upload (HttpTxManager *manager,
                             const char *host,
                             const char *token,
                             int protocol_version,
-                            gboolean use_fileserver_port,
                             GError **error);
 
 struct _HttpProtocolVersion {
@@ -139,7 +134,6 @@ typedef void (*HttpProtocolVersionCallback) (HttpProtocolVersion *result,
 int
 http_tx_manager_check_protocol_version (HttpTxManager *manager,
                                         const char *host,
-                                        gboolean use_fileserver_port,
                                         HttpProtocolVersionCallback callback,
                                         void *user_data);
 
@@ -161,7 +155,6 @@ http_tx_manager_check_head_commit (HttpTxManager *manager,
                                    int repo_version,
                                    const char *host,
                                    const char *token,
-                                   gboolean use_fileserver_port,
                                    HttpHeadCommitCallback callback,
                                    void *user_data);
 
@@ -197,7 +190,6 @@ typedef void (*HttpGetFolderPermsCallback) (HttpFolderPerms *result,
 int
 http_tx_manager_get_folder_perms (HttpTxManager *manager,
                                   const char *host,
-                                  gboolean use_fileserver_port,
                                   GList *folder_perm_requests, /* HttpFolderPermReq */
                                   HttpGetFolderPermsCallback callback,
                                   void *user_data);

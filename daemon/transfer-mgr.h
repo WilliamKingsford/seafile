@@ -141,7 +141,6 @@ struct _TransferTask {
     int          last_runtime_state;
     int          type;
     gboolean     is_clone;      /* TRUE when fetching a new repo. */
-    char        *email;
     int          error;
 
     char        *dest_id;
@@ -232,7 +231,6 @@ seaf_transfer_manager_add_download (SeafTransferManager *manager,
                                     gboolean server_side_merge,
                                     const char *passwd,
                                     const char *worktree,
-                                    const char *email,
                                     GError **error);
 
 char *

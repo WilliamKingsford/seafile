@@ -39,11 +39,8 @@ struct _SeafRepo {
     gchar       magic[65];       /* hash(repo_id + passwd), key stretched. */
     gchar       random_key[97];
     gboolean    no_local_history;
-    gint64      last_modify;
-    gint64      size;
 
     SeafBranch *head;
-    gchar root_id[41];
 
     gboolean    is_corrupted;
     gboolean    repaired;
@@ -82,9 +79,6 @@ seaf_repo_set_head (SeafRepo *repo, SeafBranch *branch);
  */
 void
 seaf_repo_from_commit (SeafRepo *repo, SeafCommit *commit);
-
-void
-seaf_fill_repo_obj_from_commit (GList **repos);
 
 /* Update repo-related fields to commit. 
  */
@@ -128,8 +122,7 @@ seaf_repo_manager_add_repo (SeafRepoManager *mgr, SeafRepo *repo);
 
 int
 seaf_repo_manager_del_repo (SeafRepoManager *mgr,
-                            const char *repo_id,
-                            GError **error);
+                            const char *repo_id);
 
 int
 seaf_repo_manager_del_virtual_repo (SeafRepoManager *mgr,
@@ -147,9 +140,6 @@ seaf_repo_manager_repo_exists (SeafRepoManager *manager, const gchar *id);
 
 GList* 
 seaf_repo_manager_get_repo_list (SeafRepoManager *mgr, int start, int limit);
-
-gint64
-seaf_repo_manager_count_repos (SeafRepoManager *mgr, GError **error);
 
 GList*
 seaf_repo_manager_get_trash_repo_list (SeafRepoManager *mgr,
@@ -588,11 +578,6 @@ GList *
 seaf_repo_manager_get_group_repoids (SeafRepoManager *mgr,
                                      int group_id,
                                      GError **error);
-
-GList *
-seaf_repo_manager_get_repos_by_group (SeafRepoManager *mgr,
-                                      int group_id,
-                                      GError **error);
 
 GList *
 seaf_repo_manager_get_group_repos_by_owner (SeafRepoManager *mgr,

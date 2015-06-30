@@ -53,7 +53,7 @@ Differences from Git:
 Build and Run
 =============
 
-See <http://manual.seafile.com/build_seafile/server.html>
+See <http://manual.seafile.com/develop/README.html>
 
 Internationalization (I18n)
 ==========
@@ -64,7 +64,7 @@ Internationalization (I18n)
 Change Logs
 ===========
 
-See <https://seacloud.cc/group/3/wiki/home/#Roadmap-ChangeLogs>
+See <https://seacloud.cc/group/3/wiki/home/>
 
 
 Why Open Source

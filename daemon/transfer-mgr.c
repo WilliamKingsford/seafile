@@ -242,7 +242,6 @@ seaf_transfer_task_free (TransferTask *task)
     g_free (task->from_branch);
     g_free (task->to_branch);
     g_free (task->token);
-    g_free (task->email);
 
     if (task->fs_roots)
         object_list_free (task->fs_roots);
@@ -586,12 +585,11 @@ seaf_transfer_manager_add_download (SeafTransferManager *manager,
                                     gboolean server_side_merge,
                                     const char *passwd,
                                     const char *worktree,
-                                    const char *email,
                                     GError **error)
 {
     TransferTask *task;
 
-    if (!repo_id || !from_branch || !to_branch || !token || !email) {
+    if (!repo_id || !from_branch || !to_branch || !token) {
         g_set_error (error, SEAFILE_DOMAIN, SEAF_ERR_BAD_ARGS, "Empty argument(s)");
         return NULL;
     }
@@ -607,7 +605,6 @@ seaf_transfer_manager_add_download (SeafTransferManager *manager,
                                    TASK_TYPE_DOWNLOAD);
     task->state = TASK_STATE_NORMAL;
     task->repo_version = repo_version;
-    task->email = g_strdup(email);
 
     task->server_side_merge = server_side_merge;
 

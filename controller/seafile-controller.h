@@ -37,7 +37,7 @@ typedef struct SeafDavConfig {
     gboolean fastcgi;
     int port;
     // host to bind server to
-    char *host;
+    gchar host[SEAFDAV_MAX_HOST + 1];
 
 } SeafDavConfig;
 

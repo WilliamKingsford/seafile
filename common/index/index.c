@@ -1060,9 +1060,10 @@ int add_to_index(const char *repo_id,
     }
 #endif
 
+    /* Skip index file errors. */
     if (index_cb (repo_id, version, full_path, sha1, crypt, TRUE) < 0) {
         free (ce);
-        return -1;
+        return 0;
     }
 
 update_index:
@@ -1075,9 +1076,7 @@ update_index:
         return -1;
     }
 
-    if (!alias || memcmp (alias->sha1, sha1, 20) != 0)
-        *added = TRUE;
-
+    *added = TRUE;
     return 0;
 }
 
@@ -1279,9 +1278,7 @@ create_renamed_cache_entry (struct cache_entry *ce,
 static struct cache_entry **
 create_renamed_cache_entries (struct index_state *istate,
                               const char *src_path, const char *dst_path,
-                              int *n_entries,
-                              CECallback cb_after_rename,
-                              void *user_data)
+                              int *n_entries)
 {
     struct cache_entry *ce, **ret = NULL;
 
@@ -1351,9 +1348,6 @@ create_renamed_cache_entries (struct index_state *istate,
 
         ret[i - pos] = create_renamed_cache_entry (ce, src_path, dst_path);
 
-        if (cb_after_rename)
-            cb_after_rename (ret[i-pos], user_data);
-
         remove_name_hash(istate, ce);
         cache_entry_free (ce);
     }
@@ -1372,9 +1366,7 @@ int
 rename_index_entries (struct index_state *istate,
                       const char *src_path,
                       const char *dst_path,
-                      gboolean *not_found,
-                      CECallback cb_after_rename,
-                      void *cb_data)
+                      gboolean *not_found)
 {
     struct cache_entry **new_ces;
     int n_entries;
@@ -1384,8 +1376,7 @@ rename_index_entries (struct index_state *istate,
     if (not_found)
         *not_found = FALSE;
 
-    new_ces = create_renamed_cache_entries (istate, src_path, dst_path, &n_entries,
-                                            cb_after_rename, cb_data);
+    new_ces = create_renamed_cache_entries (istate, src_path, dst_path, &n_entries);
     if (n_entries == 0) {
         if (not_found)
             *not_found = TRUE;

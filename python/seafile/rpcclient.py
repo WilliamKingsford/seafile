@@ -261,8 +261,8 @@ class SeafServerRpcClient(ccnet.RpcClientBase):
                                      *args, **kwargs)
 
     # token for web access to repo
-    @searpc_func("string", ["string", "string", "string", "string", "int"])
-    def seafile_web_get_access_token(repo_id, obj_id, op, username, use_onetime=1):
+    @searpc_func("string", ["string", "string", "string", "string"])
+    def seafile_web_get_access_token(repo_id, obj_id, op, username):
         pass
     web_get_access_token = seafile_web_get_access_token
     
@@ -335,11 +335,6 @@ class SeafServerThreadedRpcClient(ccnet.RpcClientBase):
     def seafile_get_repo_list(start, limit):
         pass
     get_repo_list = seafile_get_repo_list
-
-    @searpc_func("int64", [])
-    def seafile_count_repos():
-        pass
-    count_repos = seafile_count_repos
 
     @searpc_func("int", ["string", "string", "string", "string"])
     def seafile_edit_repo(repo_id, name, description, user):
@@ -569,11 +564,6 @@ class SeafServerThreadedRpcClient(ccnet.RpcClientBase):
     def seafile_get_group_repoids(group_id):
         pass
     get_group_repoids = seafile_get_group_repoids
-
-    @searpc_func("objlist", ["int"])
-    def seafile_get_repos_by_group(group_id):
-        pass
-    get_repos_by_group = seafile_get_repos_by_group
 
     @searpc_func("objlist", ["string"])
     def get_group_repos_by_owner(user_name):
