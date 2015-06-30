@@ -17,14 +17,16 @@ class SeafileAPI(object):
         pass
 
     # fileserver token
-    def get_fileserver_access_token(self, repo_id, obj_id, op, username):
+    def get_fileserver_access_token(self, repo_id, obj_id, op, username, use_onetime=True):
         """Generate token for access file/dir in fileserver
 
         op: the operation, 'view', 'download', 'download-dir'
 
         Return: the access token in string
         """
-        return seafserv_rpc.web_get_access_token(repo_id, obj_id, op, username)
+        onetime = 1 if bool(use_onetime) else 0
+        return seafserv_rpc.web_get_access_token(repo_id, obj_id, op, username,
+                                                 onetime)
 
     def query_fileserver_access_token(self, token):
         """Get the WebAccess object
@@ -57,6 +59,9 @@ class SeafileAPI(object):
 
     def get_repo_list(self, start, limit):
         return seafserv_threaded_rpc.get_repo_list(start, limit)
+
+    def count_repos(self):
+        return seafserv_threaded_rpc.count_repos()
 
     def edit_repo(self, repo_id, name, description, username):
         return seafserv_threaded_rpc.edit_repo(repo_id, name, description, username)
@@ -265,6 +270,9 @@ class SeafileAPI(object):
                 continue
             ret.append(r)
         return ret    
+
+    def get_repos_by_group(self, group_id):
+        return seafserv_threaded_rpc.get_repos_by_group(group_id)
 
     def get_group_repos_by_owner(self, username):
         return seafserv_threaded_rpc.get_group_repos_by_owner(username)

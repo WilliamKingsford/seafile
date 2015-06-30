@@ -19,6 +19,9 @@ seafile_get_session_info (GError **error);
  */
 GList* seafile_get_repo_list (int start, int limit, GError **error);
 
+gint64
+seafile_count_repos (GError **error);
+
 /**
  * seafile_get_trash_repo_list:
  *
@@ -207,6 +210,12 @@ int seafile_disable_auto_sync (GError **error);
 int seafile_enable_auto_sync (GError **error);
 
 int seafile_is_auto_sync_enabled (GError **error);
+
+char *
+seafile_get_path_sync_status (const char *repo_id,
+                              const char *path,
+                              int is_dir,
+                              GError **error);
 
 /**
  * seafile_list_dir:
@@ -462,6 +471,7 @@ seafile_web_get_access_token (const char *repo_id,
                               const char *obj_id,
                               const char *op,
                               const char *username,
+                              int use_onetime,
                               GError **error);
 
 GObject *
@@ -500,6 +510,9 @@ seafile_get_shared_groups_by_repo(const char *repo_id, GError **error);
 
 char *
 seafile_get_group_repoids (int group_id, GError **error);
+
+GList *
+seafile_get_repos_by_group (int group_id, GError **error);
 
 GList *
 seafile_get_group_repos_by_owner (char *user, GError **error);
