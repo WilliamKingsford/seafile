@@ -2092,7 +2092,7 @@ send_block_callback (void *ptr, size_t size, size_t nmemb, void *userp)
         if (seaf->sync_mgr->upload_limit > 0 &&
             sent > seaf->sync_mgr->upload_limit)
             /* 100 milliseconds */
-            g_usleep (100000);
+            G_USLEEP (100000);
         else
             break;
     }
@@ -2802,7 +2802,7 @@ get_block_callback (void *ptr, size_t size, size_t nmemb, void *userp)
         if (seaf->sync_mgr->download_limit > 0 &&
             sent > seaf->sync_mgr->download_limit)
             /* 100 milliseconds */
-            g_usleep (100000);
+            G_USLEEP (100000);
         else
             break;
     }

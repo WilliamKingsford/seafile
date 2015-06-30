@@ -178,7 +178,7 @@ get_db_connection (SeafDB *db)
     do {
         conn = ConnectionPool_getConnection (db->pool);
         if (!conn)
-            g_usleep (100000);
+            G_USLEEP (100000);
     } while (!conn && ++n_retries < 300);
 
     if (!conn)

@@ -3381,7 +3381,7 @@ delete_worktree_dir_recursive_win32 (const char *worktree,
         if (++n >= 3)
             break;
         /* Sleep 100ms and retry. */
-        g_usleep (100000);
+        G_USLEEP (100000);
         seaf_warning ("Retry remove dir %s.\n", path);
     }
     g_free (path);

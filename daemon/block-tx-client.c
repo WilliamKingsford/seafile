@@ -588,7 +588,7 @@ send_encrypted_block (BlockTxClient *client,
             if (seaf->sync_mgr->upload_limit > 0 &&
                 sent > seaf->sync_mgr->upload_limit)
                 /* 100 milliseconds */
-                g_usleep (100000);
+                G_USLEEP (100000);
             else
                 break;
         }
@@ -656,7 +656,7 @@ save_block_content_cb (char *content, int clen, int end, void *cbarg)
         gint recv_bytes = g_atomic_int_get (&(seaf->sync_mgr->recv_bytes));
         if (seaf->sync_mgr->download_limit > 0 &&
             recv_bytes > seaf->sync_mgr->download_limit) {
-            g_usleep (100000);
+            G_USLEEP (100000);
         } else {
             break;
         }

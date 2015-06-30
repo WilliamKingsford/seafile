@@ -1,5 +1,8 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
+#define G_USLEEP(x) do{} while(0)
+#define USLEEP(x) do{} while(0)
+
 #ifndef COMMON_H
 #define COMMON_H
 
